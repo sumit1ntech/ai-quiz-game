@@ -1,0 +1,26 @@
+name: checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Byte-compile every Python file
+        run: python -m compileall -q .
+
+      - name: Make sure .env was never committed
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "::error::.env is tracked — remove it with 'git rm --cached .env' and rotate your key"
+            exit 1
+          fi
+          echo "no .env in the repo 👍"

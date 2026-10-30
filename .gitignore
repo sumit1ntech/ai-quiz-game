@@ -1,0 +1,27 @@
+
+# ─── Python virtual environment ───
+.venv/
+venv/
+env/
+
+# ─── Secrets: API keys live here, never commit ───
+.env
+.env.*
+!.env.example
+
+# ─── Python cache files ───
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ─── Local data: real usernames + passwords ───
+user_data.json
+
+# ─── Editors / macOS ───
+.DS_Store
+.idea/
+.vscode/
+*.swp

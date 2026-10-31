@@ -95,6 +95,36 @@ function setMessage(element, message) {
   element.classList.toggle("hidden", !message);
 }
 
+/* ── Toast popup ────────────────────────────────────────────── */
+
+let toastTimer = null;
+
+/** Slide-in popup used for login / sign-up problems. */
+function showToast(title, message) {
+  $("#toast").classList.remove("hidden");
+  $("#toast-title").textContent = title;
+  $("#toast-message").textContent = message;
+
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, 5000);
+}
+
+function hideToast() {
+  clearTimeout(toastTimer);
+  toastTimer = null;
+  $("#toast").classList.add("hidden");
+}
+
+function setAuthError(message, title = "Login failed") {
+  setMessage($("#auth-error"), message);
+  if (message) showToast(title, message);
+}
+
+function clearAuthError() {
+  setMessage($("#auth-error"), "");
+  hideToast();
+}
+
 function bar(done, total, width = 20) {
   const filled = total ? Math.max(0, Math.min(width, Math.round((width * done) / total))) : 0;
   return "█".repeat(filled) + "░".repeat(width - filled);
@@ -103,6 +133,7 @@ function bar(done, total, width = 20) {
 /* ── Auth ───────────────────────────────────────────────────── */
 
 function enterGame(username) {
+  hideToast();
   state.user = String(username).slice(0, MAX_NAME_LENGTH);
   storage.set(SESSION_KEY, { username: state.user });
   $("#welcome-name").textContent = state.user;
@@ -115,7 +146,6 @@ function wireAuth() {
   const form = $("#auth-form");
   const username = $("#username");
   const password = $("#password");
-  const error = $("#auth-error");
 
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -127,7 +157,7 @@ function wireAuth() {
       });
       $("#auth-submit").textContent = authMode === "signup" ? "✨ Create account" : "🔓 Log In";
       password.autocomplete = authMode === "signup" ? "new-password" : "current-password";
-      setMessage(error, "");
+      clearAuthError();
       username.focus();
     });
   });
@@ -139,12 +169,15 @@ function wireAuth() {
     const secret = password.value;
 
     if (name.length < 2 || name.length > MAX_NAME_LENGTH) {
-      setMessage(error, `Please use a username between 2 and ${MAX_NAME_LENGTH} characters.`);
+      setAuthError(
+        `Please use a username between 2 and ${MAX_NAME_LENGTH} characters.`,
+        "Check your details",
+      );
       username.focus();
       return;
     }
     if (secret.length < 4) {
-      setMessage(error, "Please use a password with at least 4 characters.");
+      setAuthError("Please use a password with at least 4 characters.", "Check your details");
       password.focus();
       return;
     }
@@ -154,30 +187,33 @@ function wireAuth() {
 
     if (authMode === "signup") {
       if (accounts[name]) {
-        setMessage(error, "That username already exists. Try another, or log in.");
+        setAuthError("That username already exists. Try another, or log in.", "Sign-up failed");
         return;
       }
       accounts[name] = { hash: fingerprint, createdAt: Date.now() };
       storage.set(ACCOUNTS_KEY, accounts);
-      setMessage(error, "");
+      clearAuthError();
       enterGame(name);
       return;
     }
 
     const account = accounts[name];
     if (!account) {
-      setMessage(error, "No account found with that username. Click Sign Up to create one.");
+      setAuthError(
+        "No account found with that username. Click Sign Up to create one.",
+        "No account found",
+      );
       username.focus();
       username.select();
       return;
     }
     if (account.hash !== fingerprint) {
-      setMessage(error, "Wrong password. Try again.");
+      setAuthError("Wrong password. Try again.", "Wrong password");
       password.select();
       return;
     }
 
-    setMessage(error, "");
+    clearAuthError();
     enterGame(name);
   });
 
@@ -185,11 +221,13 @@ function wireAuth() {
     state.user = null;
     state.questions = [];
     storage.remove(SESSION_KEY);
-    setMessage(error, "");
+    clearAuthError();
     password.value = "";
     show("auth");
     username.focus();
   });
+
+  $("#toast-close").addEventListener("click", hideToast);
 }
 
 /* ── Generating + playing ───────────────────────────────────── */

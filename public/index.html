@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ultimate Quiz Game — AI quizzes on any topic</title>
+  <meta name="description" content="An AI-powered quiz game. Pick any topic and Gemini writes a fresh multiple-choice quiz for you.">
+  <meta name="theme-color" content="#05070d">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Ultimate Quiz Game">
+  <meta property="og:title" content="Ultimate Quiz Game — AI quizzes on any topic">
+  <meta property="og:description" content="Pick any topic and Gemini writes a fresh multiple-choice quiz. Play in your browser, no install needed.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Ultimate Quiz Game — AI quizzes on any topic">
+  <meta name="twitter:description" content="Pick any topic and Gemini writes a fresh multiple-choice quiz. Play in your browser, no install needed.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="glow glow-cyan" aria-hidden="true"></div>
+  <div class="glow glow-magenta" aria-hidden="true"></div>
+
+  <main class="app">
+    <div class="terminal">
+      <header class="titlebar">
+        <div class="traffic" aria-hidden="true">
+          <span class="red"></span><span class="yellow"></span><span class="green"></span>
+        </div>
+        <div class="titlebar-title">sumit@quiz — ~/ultimate-quiz-game</div>
+        <button id="logout" class="link-btn hidden" type="button">logout</button>
+      </header>
+
+      <div class="terminal-body">
+
+        <!-- ══════════ AUTH ══════════ -->
+        <section id="screen-auth" class="screen">
+          <div class="hero">
+            <div class="logo" aria-hidden="true">🎓</div>
+            <h1>ULTIMATE <span>QUIZ</span> GAME</h1>
+            <p class="sub">test your knowledge · one question at a time</p>
+          </div>
+
+          <div class="panel auth-panel">
+            <div class="tabs" role="tablist" aria-label="Account mode">
+              <button class="tab active" data-mode="login" role="tab" aria-selected="true" type="button">
+                <span class="num">2</span> Log In
+              </button>
+              <button class="tab" data-mode="signup" role="tab" aria-selected="false" type="button">
+                <span class="num">1</span> Sign Up
+              </button>
+            </div>
+
+            <form id="auth-form" novalidate>
+              <label class="field">
+                <span class="field-label">👤 Username</span>
+                <span class="input-row">
+                  <span class="caret" aria-hidden="true">›</span>
+                  <input id="username" name="username" type="text" autocomplete="username"
+                         maxlength="24" spellcheck="false" autocapitalize="none" placeholder="your name" required>
+                </span>
+              </label>
+
+              <label class="field">
+                <span class="field-label">🔑 Password</span>
+                <span class="input-row">
+                  <span class="caret" aria-hidden="true">›</span>
+                  <input id="password" name="password" type="password" autocomplete="current-password"
+                         placeholder="••••••••" required>
+                </span>
+              </label>
+
+              <p id="auth-error" class="error" role="alert" hidden></p>
+
+              <button id="auth-submit" class="btn primary" type="submit">🔓 Log In</button>
+            </form>
+
+            <p class="fineprint">Accounts live in this browser only — a demo login, not real security.</p>
+          </div>
+        </section>
+
+        <!-- ══════════ SETUP ══════════ -->
+        <section id="screen-setup" class="screen hidden">
+          <div class="welcome">🌟 Welcome, <strong id="welcome-name">player</strong>! 🌟</div>
+          <hr class="rule">
+
+          <form id="setup-form" novalidate>
+            <label class="prompt-field">
+              <span class="field-label">🎯 Choose your topic</span>
+              <span class="hint">e.g. space · football · Python · Bollywood · world history</span>
+              <span class="input-row big">
+                <span class="caret" aria-hidden="true">›</span>
+                <input id="topic" name="topic" type="text" maxlength="120" spellcheck="false"
+                       placeholder="space" autocomplete="off" required>
+              </span>
+            </label>
+
+            <label class="prompt-field">
+              <span class="field-label">🔢 How many questions?</span>
+              <span class="hint">1 – 10 · leave blank for 5</span>
+              <span class="input-row">
+                <span class="caret" aria-hidden="true">›</span>
+                <input id="count" name="count" type="number" min="1" max="10" step="1" value="5"
+                       inputmode="numeric">
+              </span>
+            </label>
+
+            <p id="setup-error" class="error" role="alert" hidden></p>
+
+            <button class="btn primary" type="submit">🎲 Generate quiz</button>
+            <p class="fineprint">Questions are generated live by Gemini — they can occasionally be wrong.</p>
+          </form>
+        </section>
+
+        <!-- ══════════ LOADING ══════════ -->
+        <section id="screen-loading" class="screen hidden" aria-live="polite">
+          <div class="loader">
+            <div class="spinner" id="spinner" aria-hidden="true">⠋</div>
+            <p class="loading-text" id="loading-text">Shuffling your question deck…</p>
+            <p class="fineprint">Gemini is writing fresh questions for you.</p>
+          </div>
+        </section>
+
+        <!-- ══════════ QUIZ ══════════ -->
+        <section id="screen-quiz" class="screen hidden">
+          <div class="quiz-meta">
+            <span id="quiz-progress-text">Question 1 of 5</span>
+            <span class="progress" id="progress" aria-hidden="true"></span>
+            <span class="tally" id="tally">✓ 0</span>
+          </div>
+
+          <h2 id="question-text" class="question" tabindex="-1"></h2>
+          <div id="options" class="options"></div>
+
+          <p id="feedback" class="feedback" aria-live="polite"></p>
+
+          <button id="next" class="btn primary hidden" type="button">Next →</button>
+          <p class="kbd-hint">Tip: press <kbd>A</kbd>–<kbd>D</kbd> or <kbd>1</kbd>–<kbd>4</kbd> to answer · <kbd>Enter</kbd> to continue</p>
+        </section>
+
+        <!-- ══════════ RESULT ══════════ -->
+        <section id="screen-result" class="screen hidden">
+          <div class="panel result-panel">
+            <div class="result-title" id="result-title"></div>
+            <div class="result-score" id="result-score"></div>
+            <div class="progress result-bar" id="result-bar" aria-hidden="true"></div>
+            <p class="muted" id="result-message"></p>
+
+            <div class="result-actions">
+              <button id="play-again" class="btn primary" type="button">🔁 Play again</button>
+              <button id="change-topic" class="btn" type="button">🎯 New topic</button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <footer class="footer">
+      Powered by <span>Gemini</span> · deployed on <span>Cloudflare</span> ·
+      <a href="https://github.com/sumit1ntech/ai-quiz-game" target="_blank" rel="noopener noreferrer">source</a>
+    </footer>
+  </main>
+
+  <noscript>
+    <p class="noscript">This game needs JavaScript enabled. The Python terminal version still works offline.</p>
+  </noscript>
+
+  <script src="/app.js" type="module"></script>
+</body>
+</html>

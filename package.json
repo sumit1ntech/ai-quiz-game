@@ -1,0 +1,11 @@
+{
+  "name": "ai-quiz-game-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser version of the Ultimate Quiz Game — static front-end plus a Cloudflare Pages Function that talks to Gemini.",
+  "scripts": {
+    "dev": "npx wrangler pages dev public",
+    "test": "node --test tests/*.test.mjs"
+  }
+}

@@ -1,4 +1,4 @@
-"""Shared terminal styling for the Quiz Game.
+"""Shared terminal styling and input helpers for the Quiz Game.
 
 Keeps the login screen and the quiz looking like the same product.
 Colors switch themselves off when output is piped or NO_COLOR is set.
@@ -41,18 +41,30 @@ class C:
     GREY = "\033[90m" if ON else ""
 
 
+def ask(prompt):
+    """input() that exits gracefully on Ctrl+D instead of dumping a traceback."""
+    try:
+        return input(prompt)
+    except EOFError:
+        print(f"\n\n{C.GREY}👋 Goodbye!{C.RESET}")
+        sys.exit(0)
+
+
 def visible_len(text):
     """Length of `text` as the terminal draws it (ANSI stripped, emoji = 2)."""
     text = _ANSI.sub("", text)
     total = 0
     for index, char in enumerate(text):
-        if char in "\u200d\ufe0e" or unicodedata.combining(char):
+        # Joiners and variation selectors belong to the glyph next to them and
+        # never take a column of their own.
+        if char in "\u200d\ufe0e\ufe0f" or unicodedata.combining(char):
             continue
         if unicodedata.east_asian_width(char) in ("W", "F"):
             total += 2
         elif ord(char) >= 0x1F300:
             total += 2
-        elif ord(char) >= 0x2600 and text[index + 1:index + 2] == "\ufe0f":
+        elif text[index + 1:index + 2] == "\ufe0f":
+            # Emoji presentation selector: base char + U+FE0F draws 2 columns.
             total += 2
         else:
             total += 1

@@ -19,6 +19,13 @@ __pycache__/
 
 # ─── Local data: real usernames + passwords ───
 user_data.json
+user_data.*.json
+user_data.json.tmp
+
+# ─── Cloudflare / web ───
+node_modules/
+.wrangler/
+.dev.vars
 
 # ─── Editors / macOS ───
 .DS_Store

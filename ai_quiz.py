@@ -4,6 +4,7 @@
 
 import json
 import os
+import string
 import sys
 from pathlib import Path
 
@@ -13,7 +14,7 @@ from google.genai import types
 from pydantic import BaseModel
 
 import ui
-from ui import C
+from ui import C, ask
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -21,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_MODEL = "gemini-3.5-flash-lite"
 OPTIONS_PER_QUESTION = 4
 MAX_QUESTIONS = 10
-LETTERS = "ABCD"
+LETTERS = string.ascii_uppercase[:OPTIONS_PER_QUESTION]
 
 
 # --- The shape we ask Gemini to fill in -------------------------------------
@@ -116,10 +117,10 @@ def generate_quiz(client, topic, count):
             print(f"{C.RED}❌ Gemini replied with something I could not read.{C.RESET} Try again.")
             return []
 
-    return clean_questions(quiz.questions)
+    return clean_questions(quiz.questions, count)
 
 
-def clean_questions(questions):
+def clean_questions(questions, limit=None):
     """Throw away anything malformed so the game can never crash mid-quiz."""
     good, seen = [], set()
     for item in questions:
@@ -140,38 +141,37 @@ def clean_questions(questions):
 
         seen.add(text.lower())
         good.append({"question": text, "options": options, "answer": answer})
-    return good
+    return good[:limit] if limit is not None else good
 
 
 # --- Playing ----------------------------------------------------------------
-def ask(prompt):
-    """input() that exits gracefully on Ctrl+D instead of dumping a traceback."""
-    try:
-        return input(prompt)
-    except EOFError:
-        print(f"\n\n{C.GREY}👋 Goodbye!{C.RESET}")
-        sys.exit(0)
-
-
 def ask_number(prompt, low, high, default=None):
     """Read a whole number in [low, high], re-asking until it is valid."""
     while True:
         raw = ask(prompt).strip()
         if not raw and default is not None:
             return default
-        if raw.isdigit() and low <= int(raw) <= high:
-            return int(raw)
+        try:
+            value = int(raw)
+        except ValueError:
+            value = None
+        if value is not None and low <= value <= high:
+            return value
         print(f"{C.YELLOW}⚠️  Please enter a number from {low} to {high}.{C.RESET}")
 
 
 def ask_answer(prompt):
-    """Read an answer as A-D or 1-4, re-asking until it is valid."""
+    """Read an answer as a letter or number, re-asking until it is valid."""
     while True:
         raw = ask(prompt).strip().upper()
         if raw in LETTERS[:OPTIONS_PER_QUESTION]:
             return LETTERS.index(raw) + 1
-        if raw.isdigit() and 1 <= int(raw) <= OPTIONS_PER_QUESTION:
-            return int(raw)
+        try:
+            value = int(raw)
+        except ValueError:
+            value = None
+        if value is not None and 1 <= value <= OPTIONS_PER_QUESTION:
+            return value
         print(f"  {C.YELLOW}⚠️  Pick one of {LETTERS[:OPTIONS_PER_QUESTION]} or 1-{OPTIONS_PER_QUESTION}.{C.RESET}")
 
 
@@ -284,11 +284,11 @@ def main():
     if "--check" in sys.argv:
         sys.exit(0 if check_api(client) else 1)
 
-    # Imported here on purpose: importing quiz_login_sys starts the login UI,
-    # so we only do it AFTER the API key has been validated.
+    # Imported here on purpose: the login UI should only appear AFTER the API
+    # key has been validated, so nobody types a password for a game that cannot start.
     import quiz_login_sys as login
 
-    play(client, login.user_name)
+    play(client, login.run_login())
 
 
 if __name__ == "__main__":

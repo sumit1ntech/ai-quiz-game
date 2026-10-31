@@ -17,10 +17,24 @@ jobs:
       - name: Byte-compile every Python file
         run: python -m compileall -q .
 
-      - name: Make sure .env was never committed
+      - name: Import modules without launching the login UI
+        run: python -c "import ui, quiz_login_sys; print('imports OK')"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Test the Cloudflare Pages Function
+        run: npm test
+
+      - name: Make sure secrets were never committed
         run: |
-          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
-            echo "::error::.env is tracked — remove it with 'git rm --cached .env' and rotate your key"
-            exit 1
-          fi
-          echo "no .env in the repo 👍"
+          failed=0
+          for file in .env user_data.json; do
+            if git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
+              echo "::error::$file is tracked — remove it with 'git rm --cached $file' and rotate any secrets"
+              failed=1
+            fi
+          done
+          [ "$failed" -eq 0 ] && echo "no secrets in the repo 👍"
+          exit "$failed"

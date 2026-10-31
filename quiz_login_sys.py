@@ -56,10 +56,14 @@ def log_in(user_data):
     while True:
         username = ask(f"   {C.GREY}👤 Username{C.RESET} {C.CYAN}›{C.RESET} ").strip().lower()
         password = ask(f"   {C.GREY}🔑 Password{C.RESET} {C.CYAN}›{C.RESET} ")
-        if user_data.get(username) == password:
-            print(f"\n   {C.GREEN}✅ Welcome back, {C.BOLD}{username}{C.RESET}{C.GREEN}!{C.RESET}")
-            return username
-        print(f"   {C.RED}❌ Invalid username or password.{C.RESET} Try again.\n")
+        if username not in user_data:
+            print(f"   {C.RED}❌ No account found with that username.{C.RESET} Use Sign Up (1) to create one.\n")
+            continue
+        if user_data[username] != password:
+            print(f"   {C.RED}❌ Wrong password.{C.RESET} Try again.\n")
+            continue
+        print(f"\n   {C.GREEN}✅ Welcome back, {C.BOLD}{username}{C.RESET}{C.GREEN}!{C.RESET}")
+        return username
 
 
 def run_login():

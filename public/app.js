@@ -165,8 +165,14 @@ function wireAuth() {
     }
 
     const account = accounts[name];
-    if (!account || account.hash !== fingerprint) {
-      setMessage(error, "Invalid username or password. Try again.");
+    if (!account) {
+      setMessage(error, "No account found with that username. Click Sign Up to create one.");
+      username.focus();
+      username.select();
+      return;
+    }
+    if (account.hash !== fingerprint) {
+      setMessage(error, "Wrong password. Try again.");
       password.select();
       return;
     }
